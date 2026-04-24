@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Summarizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .tab-button {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1em;
+            color: #666;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-button:hover {
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 1.05em;
+        }
+        
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.05em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result h3 {
+            color: #333;
+            margin-bottom: 12px;
+            font-size: 1.2em;
+        }
+        
+        .result p {
+            color: #555;
+            line-height: 1.6;
+            font-size: 1em;
+        }
+        
+        .error {
+            color: #e74c3c;
+            padding: 15px;
+            background: #fadbd8;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .success {
+            color: #27ae60;
+            padding: 15px;
+            background: #d5f4e6;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #27ae60;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .url-result {
+            margin-top: 20px;
+        }
+        
+        .url-title {
+            color: #667eea;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Text Summarizer</h1>
+        <p class="subtitle">Summarize text or web articles instantly</p>
+        
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('text')">Text Summary</button>
+            <button class="tab-button" onclick="switchTab('url')">URL Summary</button>
+        </div>
+        
+        <!-- Text Tab -->
+        <div id="text" class="tab-content active">
+            <form onsubmit="summarizeText(event)">
+                <div class="form-group">
+                    <label for="text-input">Enter Text to Summarize:</label>
+                    <textarea id="text-input" placeholder="Paste your text here..." required></textarea>
+                </div>
+                <button type="submit" id="text-btn">Summarize Text</button>
+            </form>
+            <div class="loading" id="text-loading">
+                <div class="spinner"></div>
+                <p style="color: #666; margin-top: 10px;">Summarizing...</p>
+            </div>
+            <div id="text-result"></div>
+        </div>
+        
+        <!-- URL Tab -->
+        <div id="url" class="tab-content">
+            <form onsubmit="summarizeUrl(event)">
+                <div class="form-group">
+                    <label for="url-input">Enter URL:</label>
+                    <input type="text" id="url-input" placeholder="https://example.com or example.com" required>
+                </div>
+                <button type="submit" id="url-btn">Summarize URL</button>
+            </form>
+            <div class="loading" id="url-loading">
+                <div class="spinner"></div>
+                <p style="color: #666; margin-top: 10px;">Fetching and summarizing...</p>
+            </div>
+            <div id="url-result"></div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        async function summarizeText(e) {
+            e.preventDefault();
+            
+            const text = document.getElementById('text-input').value.trim();
+            const resultDiv = document.getElementById('text-result');
+            const loadingDiv = document.getElementById('text-loading');
+            const btn = document.getElementById('text-btn');
+            
+            if (text.length < 10) {
+                resultDiv.innerHTML = '<div class="error">Please enter at least 10 characters.</div>';
+                return;
+            }
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/summarize-text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result">
+                            <h3>📌 Summary</h3>
+                            <p>${data.summary}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function summarizeUrl(e) {
+            e.preventDefault();
+            
+            const url = document.getElementById('url-input').value.trim();
+            const resultDiv = document.getElementById('url-result');
+            const loadingDiv = document.getElementById('url-loading');
+            const btn = document.getElementById('url-btn');
+            
+            if (!url) {
+                resultDiv.innerHTML = '<div class="error">Please enter a URL.</div>';
+                return;
+            }
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.innerHTML = '';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/summarize-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url })
+                });
+                
+                const data = await response.json();
+                loadingDiv.style.display = 'none';
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result url-result">
+                            <div class="url-title">📄 ${data.title}</div>
+                            <h3>📌 Summary</h3>
+                            <p>${data.summary}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                }
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
